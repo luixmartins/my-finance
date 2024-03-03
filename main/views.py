@@ -4,4 +4,7 @@ from django.views import generic
 class Home(generic.TemplateView): 
     template_name = 'home.html'
 
+class OtherHome(generic.TemplateView): 
+    ... 
+
     
