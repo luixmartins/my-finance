@@ -1,6 +1,7 @@
+from typing import Any
 from django import forms  
 from django.contrib.auth.models import User  
-from django.contrib.auth.forms import UserCreationForm  
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm  
 from django.core.exceptions import ValidationError  
 from django.forms.fields import EmailField  
 from django.forms.forms import Form  
@@ -57,6 +58,10 @@ class UserCreateForm(UserCreationForm):
         )  
         return user  
 
-    
+class AuthUserForm(AuthenticationForm): 
+    def __init__(self, *args, **kwargs):
+        super(AuthUserForm, self).__init__(*args, **kwargs)
 
+        self.fields['username'].widget.attrs['class'] = 'form-control'
+        self.fields['password'].widget.attrs['class'] = 'form-control'
         
