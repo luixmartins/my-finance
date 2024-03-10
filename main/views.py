@@ -22,7 +22,7 @@ class Home(View):
 
             auth.login(request, user)
 
-            #return render(request, 'home.html', context={'form': 'LOGUEI'})
+            return redirect('finance:home')
         context = {
             'form': form 
         }
