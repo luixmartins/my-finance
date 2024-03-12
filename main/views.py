@@ -7,7 +7,7 @@ from django.contrib import auth
 
 from main import forms 
 
-class Home(View): 
+class LoginView(View): 
     def get(self, request): 
         context = { 
             'form': forms.AuthUserForm()
@@ -32,6 +32,10 @@ class Home(View):
         print(form.errors.as_data())
         return render(request, 'login.html', context)
 
+def logout(request): 
+    auth.logout(request)
+
+    return redirect('main:login')
 
 class RegisterUserView(generic.CreateView):
     template_name = 'create_user.html'
