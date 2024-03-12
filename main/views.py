@@ -15,19 +15,22 @@ class Home(View):
         return render(request, 'login.html', context)
     
     def post(self, request): 
-        form = forms.AuthUserForm(request, self.request.POST)
+        form = forms.AuthUserForm(request, request.POST)
 
+        print(form.is_valid())
         if form.is_valid(): 
             user = form.get_user()
 
+            print(user)
             auth.login(request, user)
 
             return redirect('finance:home')
         context = {
-            'form': form 
+            'form': form, 
+            'message': 'Please, enter with a correct username and password. Note that both fields are case sensitive.'
         }
-
-        return render(request, 'home.html', context)
+        print(form.errors.as_data())
+        return render(request, 'login.html', context)
 
 
 class RegisterUserView(generic.CreateView):

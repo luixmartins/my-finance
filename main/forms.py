@@ -65,3 +65,6 @@ class AuthUserForm(AuthenticationForm):
         self.fields['username'].widget.attrs['class'] = 'form-control'
         self.fields['password'].widget.attrs['class'] = 'form-control'
         
+        self.fields['username'].label_suffix = ''
+        self.fields['password'].label_suffix = ''
+        
