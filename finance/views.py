@@ -5,5 +5,8 @@ from django.utils.decorators import method_decorator
 
 @method_decorator(login_required(login_url='main:login'), name='dispatch')
 class HomeView(generic.TemplateView):
+    '''
+        Home page for logged users. 
+    '''
     template_name = 'home.html'  
 
