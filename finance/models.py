@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User 
 from django.core.exceptions import ValidationError
 
+from datetime import date 
+
 def validate_category(name): 
     if len(name) < 2: 
         raise ValidationError('Text size is too short. Enter a valid text.')
@@ -9,6 +11,13 @@ def validate_category(name):
         raise ValidationError('The first letter cannot be a number. Enter a valid text.')
     
     return name.lower()
+
+def validate_value_spent(value): 
+    if not isinstance(value, (int, float)): 
+        raise ValidationError('The value must be an int or float instance.')
+    
+    if value <= 0: 
+        raise ValidationError('The value must be greater than zero.')
 
 class CategoryModel(models.Model): 
     name = models.CharField(max_length=255, unique=True, validators=[validate_category])
@@ -33,5 +42,11 @@ class MemberCategoryModel(models.Model):
     def __str__(self) -> str:
         return f'{self.member.username} - {self.category.name}'
 
-# class SpentModel(models.Model): 
-#     description = models.CharField(max_length=255)
+class SpentModel(models.Model): 
+    description = models.CharField(max_length=255)
+    value = models.DecimalField(max_digits=10, decimal_places=2, validators=[validate_value_spent])
+    date = models.DateField(default=date.today, blank=True)
+    member_category = models.ForeignKey(MemberCategoryModel, on_delete=models.CASCADE, related_name='member_category')
+
+    def __str__(self) -> str:
+        return f'{self.date} - {self.value}'
