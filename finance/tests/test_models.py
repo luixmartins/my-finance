@@ -47,16 +47,30 @@ class MemberCategory(TestCase):
 
 class Spent(TestCase): 
     def setUp(self): 
-        self.member_category = MemberCategoryModel.objects.create(
-            member=User.objects.create(username='luiz'), 
-            category=CategoryModel.objects.create(name='supermarket'), 
-        )
+        self.member = User.objects.create(username='luiz', password='test@test')
+        self.category = CategoryModel.objects.create(name='eletronic')
+        
+        self._  = MemberCategoryModel.objects.create(member=self.member, category=self.category)
+    
+    def create_spent_without_valid_category_for_user(self): 
+        obj_cat = CategoryModel.objects.create(name='home')
+
+        with self.assertRaises(ValidationError): 
+            obj = SpentModel.objects.create(
+                description='spent on food', 
+                value = 98.23, 
+                member = self.member, 
+                category = obj_cat, 
+            )
+
+            obj.full_clean()
 
     def test_create_spent_without_date_field(self): 
         obj = SpentModel.objects.create(
             description='spent on food', 
             value=152.21, 
-            member_category=self.member_category
+            member = self.member, 
+            category = self.category, 
         )
 
         self.assertIsInstance(obj, SpentModel)
@@ -66,7 +80,8 @@ class Spent(TestCase):
             description='spent on food', 
             value=152.21, 
             date=datetime.date(2024, 4, 2),
-            member_category=self.member_category
+            member = self.member, 
+            category = self.category,
         )
 
         self.assertIsInstance(obj, SpentModel)
@@ -77,9 +92,8 @@ class Spent(TestCase):
                 description='spent on food', 
                 value=-15.21, 
                 date=datetime.date(2024, 4, 2),
-                member_category=self.member_category
+                member = self.member, 
+                category = self.category, 
             )
             
             obj.full_clean()
-
-    

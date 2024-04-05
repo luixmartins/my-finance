@@ -1,3 +1,4 @@
+from typing import Iterable
 from django.db import models
 from django.contrib.auth.models import User 
 from django.core.exceptions import ValidationError
@@ -46,7 +47,17 @@ class SpentModel(models.Model):
     description = models.CharField(max_length=255)
     value = models.DecimalField(max_digits=10, decimal_places=2, validators=[validate_value_spent])
     date = models.DateField(default=date.today, blank=True)
-    member_category = models.ForeignKey(MemberCategoryModel, on_delete=models.CASCADE, related_name='member_category')
+    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='member_spent')
+    category = models.ForeignKey(CategoryModel, on_delete=models.CASCADE, related_name='category_spent')
+
+    def save(self, *args, **kwargs):
+        try: 
+            MemberCategoryModel.objects.get(category=self.category)
+        except: 
+            raise ValidationError('The category does not exist for this user.')
+
+        return super().save(*args, **kwargs)
+
 
     def __str__(self) -> str:
         return f'{self.date} - {self.value}'
