@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User 
 from django.core.exceptions import ValidationError
 
-from datetime import date 
+from datetime import date, timedelta
 
 def validate_category(name): 
     if len(name) < 2: 
@@ -13,13 +13,13 @@ def validate_category(name):
     
     return name.lower()
 
-def validate_value_spent(value): 
+def validate_positive_values(value): 
     if not isinstance(value, (int, float)): 
         raise ValidationError('The value must be an int or float instance.')
     
     if value <= 0: 
         raise ValidationError('The value must be greater than zero.')
-
+    
 class CategoryModel(models.Model): 
     name = models.CharField(max_length=255, unique=True, validators=[validate_category])
 
@@ -45,7 +45,7 @@ class MemberCategoryModel(models.Model):
 
 class SpentModel(models.Model): 
     description = models.CharField(max_length=255)
-    value = models.DecimalField(max_digits=10, decimal_places=2, validators=[validate_value_spent])
+    value = models.DecimalField(max_digits=10, decimal_places=2, validators=[validate_positive_values])
     date = models.DateField(default=date.today, blank=True)
     member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='member_spent')
     category = models.ForeignKey(CategoryModel, on_delete=models.CASCADE, related_name='category_spent')
@@ -61,3 +61,25 @@ class SpentModel(models.Model):
 
     def __str__(self) -> str:
         return f'{self.date} - {self.value}'
+    
+class RecurringSpentModel(models.Model): 
+    period = models.IntegerField(validators=[validate_positive_values])
+    last_billing_date = models.DateField(default=date.today, blank=True)
+    spent = models.ForeignKey(SpentModel, on_delete=models.CASCADE, related_name='spent')
+
+    @property
+    def next_billing_date(self):
+        return self.last_billing_date + timedelta(days=self.period)
+
+    def update_last_billing_date(self): 
+        if date.today() >= self.next_billing_date: 
+            self.last_billing_date = self.next_billing_date 
+
+            self.save()
+
+    class Meta: 
+        verbose_name = 'Recurring Spent'
+        verbose_name_plural = 'Recurring Spent'
+        ordering = ['-last_billing_date']
+
+#recurring_spents = RecurringSpentModel.objects.filter(spent__member=member)

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 
 import datetime 
 
-from finance.models import CategoryModel, MemberCategoryModel, SpentModel 
+from finance.models import CategoryModel, MemberCategoryModel, SpentModel, RecurringSpentModel
 
 class Category(TestCase): 
     def setUp(self): 
@@ -96,4 +96,26 @@ class Spent(TestCase):
                 category = self.category, 
             )
             
+            obj.full_clean()
+
+class RecurringSpent(TestCase): 
+    def setUp(self): 
+        self.member = User.objects.create(username='luiz', password='test@test')
+        self.category = CategoryModel.objects.create(name='eletronic')
+        _ = MemberCategoryModel.objects.create(member=self.member, category=self.category)
+        
+        self.spent = SpentModel.objects.create(
+            description = 'spent on gpu', 
+            value = 947.89, 
+            member = self.member, 
+            category = self.category, 
+        )
+
+    def test_create_invalid_period_for_recurring_spent(self): 
+        with self.assertRaises(ValidationError): 
+            obj = RecurringSpentModel.objects.create(
+                period=-1, 
+                spent=self.spent, 
+            )
+
             obj.full_clean()
