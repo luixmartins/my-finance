@@ -1,10 +1,13 @@
+from django.contrib.auth.models import User 
+
 from rest_framework.views import APIView 
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token 
 from rest_framework import status 
 from rest_framework.permissions import IsAuthenticated
 
-from user.serializers import AuthenticateSerializer
+from user.serializers import AuthenticateSerializer, RegisterUserSerializer
 
 class LoginView(APIView): 
     def post(self, request): 
@@ -13,8 +16,10 @@ class LoginView(APIView):
         if serializer.is_valid(): 
             user = serializer.validated_data['user']
             
+            token, created = Token.objects.get_or_create(user=user)
+            
             response = {
-                'token': str(Token.objects.get_or_create(user=user)[0])
+                'token': token.key
             }
 
             return Response(response, status=status.HTTP_202_ACCEPTED)
@@ -29,5 +34,19 @@ class LogoutView(APIView):
 
         return Response(status=status.HTTP_200_OK)
     
-class RegisterView(APIView): 
-    ... 
+class RegisterView(generics.CreateAPIView): 
+    serializer_class = RegisterUserSerializer 
+
+    def create(self, request): 
+        serializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        user = User.objects.get(username=serializer.data['username'])
+        token, created = Token.objects.get_or_create(user=user)
+                
+        data = serializer.data 
+        data['token'] = token.key 
+
+        return Response(data, status.HTTP_201_CREATED)
