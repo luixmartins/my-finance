@@ -21,7 +21,7 @@ def validate_positive_values(value):
         raise ValidationError('The value must be greater than zero.')
     
 class CategoryModel(models.Model): 
-    name = models.CharField(max_length=255, unique=True, validators=[validate_category])
+    name = models.CharField(max_length=255, validators=[validate_category])
 
     class Meta: 
         verbose_name = 'Category'

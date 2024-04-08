@@ -7,18 +7,21 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from finance.serializers import CategorySerializer
-from finance.models import MemberCategoryModel 
+from finance.models import MemberCategoryModel, CategoryModel
 
-class CategoryCreateView(APIView): 
+class CategoryListCreateView(APIView): 
     permission_classes = [IsAuthenticated]
+
+    def get(self, request): 
+        categories = CategoryModel.objects.filter(category__member=request.user)
+        
+        serializer = CategorySerializer(categories, many=True)
+
+        return Response(serializer.data)
+        
     
     def post(self, request): 
-        data = {
-            'username': request.user.username, 
-            'name': request.POST['name']
-        }
-        
-        serializer = CategorySerializer(data=data)
+        serializer = CategorySerializer(data=request.POST, context={'user': request.user})
 
         if serializer.is_valid(): 
             serializer.save()

@@ -5,21 +5,18 @@ from rest_framework import serializers
 
 from finance.models import MemberCategoryModel, CategoryModel 
 
-class CategorySerializer(serializers.Serializer): 
-    username = serializers.CharField(max_length=100)
-    name = serializers.CharField(max_length=100)
+class CategorySerializer(serializers.ModelSerializer): 
+    class Meta: 
+        model = CategoryModel 
+        fields = ['name']
 
-    def create(self, data): 
-        user = User.objects.get(username=data['username'])
-        name = data['name']
+    def create(self, validated_data): 
+        user = self.context['user']
+        category, created = CategoryModel.objects.get_or_create(**validated_data)
         
-        category, created = CategoryModel.objects.get_or_create(name=name)
-        
-        try: 
+        try:
             MemberCategoryModel.objects.create(member=user, category=category)
-
         except IntegrityError: 
             raise serializers.ValidationError('This category is already associated with the user')
 
-        return category 
-    
+        return validated_data
