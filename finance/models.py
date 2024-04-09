@@ -52,8 +52,8 @@ class SpentModel(models.Model):
 
     def save(self, *args, **kwargs):
         try: 
-            MemberCategoryModel.objects.get(category=self.category)
-        except: 
+            MemberCategoryModel.objects.get(category=self.category, member=self.member)
+        except MemberCategoryModel.DoesNotExist: 
             raise ValidationError('The category does not exist for this user.')
 
         return super().save(*args, **kwargs)

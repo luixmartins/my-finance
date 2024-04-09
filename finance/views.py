@@ -7,8 +7,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 
-from finance.serializers import CategorySerializer
-from finance.models import MemberCategoryModel, CategoryModel
+from django_filters.rest_framework import DjangoFilterBackend
+
+from finance.serializers import CategorySerializer, SpentSerializer
+from finance.models import MemberCategoryModel, CategoryModel, SpentModel
+from finance.filters import SpentModelFilter
 
 class CategoryListCreateView(APIView): 
     permission_classes = [IsAuthenticated]
@@ -45,3 +48,44 @@ class CategoryDeleteView(APIView):
         obj.delete() 
 
         return Response({'success': 'The category has been deleted'}, status=status.HTTP_200_OK)
+    
+class SpentListCreateView(APIView): 
+    permission_classes = [IsAuthenticated]
+    filterset_class = SpentModelFilter
+
+    def get(self, request): 
+        spents = SpentModel.objects.filter(member=request.user)
+
+        filter_backend = DjangoFilterBackend()
+        filtered_spents = filter_backend.filter_queryset(request, spents, self)
+
+        serializer = SpentSerializer(filtered_spents, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request): 
+        serializer = SpentSerializer(data=request.POST, context={'user': request.user})
+
+        if serializer.is_valid(): 
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+    
+class SpentDetailView(generics.RetrieveUpdateDestroyAPIView): 
+    permission_classes = [IsAuthenticated]
+    serializer_class = SpentSerializer
+
+    def get_queryset(self):
+        return SpentModel.objects.filter(member=self.request.user)
+    
+    def update(self, request, *args, **kwargs): 
+        instance = self.get_object()
+        serializer = SpentSerializer(instance, data=request.data, partial=True, context={'user': request.user})
+
+        if serializer.is_valid(): 
+            serializer.save() 
+
+            return Response(serializer.data)
+        return Response(serializer.errors)
