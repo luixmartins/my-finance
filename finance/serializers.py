@@ -8,7 +8,10 @@ from finance.models import MemberCategoryModel, CategoryModel
 class CategorySerializer(serializers.ModelSerializer): 
     class Meta: 
         model = CategoryModel 
-        fields = ['name']
+        fields = ['id', 'name']
+        
+        read_only_fields = ['id']
+
 
     def create(self, validated_data): 
         user = self.context['user']
