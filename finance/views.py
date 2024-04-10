@@ -9,8 +9,8 @@ from rest_framework.exceptions import ValidationError
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from finance.serializers import CategorySerializer, SpentSerializer
-from finance.models import MemberCategoryModel, CategoryModel, SpentModel
+from finance.serializers import CategorySerializer, SpentSerializer, RecurringSpentSerializer
+from finance.models import MemberCategoryModel, CategoryModel, SpentModel, RecurringSpentModel
 from finance.filters import SpentModelFilter
 
 class CategoryListCreateView(APIView): 
@@ -25,7 +25,7 @@ class CategoryListCreateView(APIView):
         
     
     def post(self, request): 
-        serializer = CategorySerializer(data=request.POST, context={'user': request.user})
+        serializer = CategorySerializer(data=request.data, context={'user': request.user})
 
         if serializer.is_valid(): 
             serializer.save()
@@ -64,7 +64,7 @@ class SpentListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request): 
-        serializer = SpentSerializer(data=request.POST, context={'user': request.user})
+        serializer = SpentSerializer(data=request.data, context={'user': request.user})
 
         if serializer.is_valid(): 
             serializer.save()
@@ -88,4 +88,48 @@ class SpentDetailView(generics.RetrieveUpdateDestroyAPIView):
             serializer.save() 
 
             return Response(serializer.data)
+        return Response(serializer.errors)
+    
+class RecurringSpentListCreateView(APIView): 
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request): 
+        spents = RecurringSpentModel.objects.filter(spent__member=request.user)
+        serializer = RecurringSpentSerializer(spents, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request): 
+        context = { 
+            'user': request.user, 
+            'data': request.data['spent']
+        }
+
+        serializer = RecurringSpentSerializer(data=request.data, context=context)
+
+        if serializer.is_valid(): 
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RecurringSpentDetailView(generics.RetrieveUpdateDestroyAPIView): 
+    permission_classes = [IsAuthenticated]
+    serializer_class = RecurringSpentSerializer
+
+    def get_queryset(self): 
+        return RecurringSpentModel.objects.filter(spent__member=self.request.user)
+    
+    def update(self, request, *args, **kwargs): 
+        instance = self.get_object()
+
+        serializer = RecurringSpentSerializer(instance, data=request.data, partial=True, context={'user': request.user})
+
+        if serializer.is_valid(): 
+            test = serializer.save() 
+            print(test)
+
+            return Response(serializer.data)
+        
         return Response(serializer.errors)
