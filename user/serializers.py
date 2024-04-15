@@ -19,7 +19,7 @@ class AuthenticateSerializer(serializers.Serializer):
         
         raise ValidationError('Invalid credentials')
     
-class RegisterUserSerializer(serializers.ModelSerializer): 
+class UserSerializer(serializers.ModelSerializer): 
     password2 = serializers.CharField(write_only=True)
 
     class Meta: 

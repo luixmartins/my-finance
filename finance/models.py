@@ -1,7 +1,7 @@
-from typing import Iterable
 from django.db import models
 from django.contrib.auth.models import User 
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 from datetime import date, timedelta
 
@@ -22,64 +22,43 @@ def validate_positive_values(value):
     
 class CategoryModel(models.Model): 
     name = models.CharField(max_length=255, validators=[validate_category])
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user')
 
     class Meta: 
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
         ordering = ["name"]
+        unique_together = [['user', 'name']]
 
     def __str__(self) -> str:
-        return self.name 
-    
-class MemberCategoryModel(models.Model): 
-    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='member')
-    category = models.ForeignKey(CategoryModel, on_delete=models.CASCADE, related_name='category')
-
-    class Meta: 
-        verbose_name = 'Member and Category'
-        verbose_name_plural = 'Members and Categories'
-        unique_together = [['member', 'category']]
-
-    def __str__(self) -> str:
-        return f'{self.member.username} - {self.category.name}'
+        return f'{self.user.username} - {self.name}'   
 
 class SpentModel(models.Model): 
     description = models.CharField(max_length=255)
     value = models.DecimalField(max_digits=10, decimal_places=2, validators=[validate_positive_values])
     date = models.DateField(default=date.today, blank=True)
-    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='member_spent')
+    created_at = models.DateTimeField(auto_now_add=True, blank=True)
+    updated_at = models.DateField(auto_now=True, blank=True)
+    recurring = models.BooleanField(default=False)
+    period = models.IntegerField(null=True, blank=True, validators=[validate_positive_values])
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_spent')
     category = models.ForeignKey(CategoryModel, on_delete=models.CASCADE, related_name='category_spent')
 
-    def save(self, *args, **kwargs):
-        try: 
-            MemberCategoryModel.objects.get(category=self.category, member=self.member)
-        except MemberCategoryModel.DoesNotExist: 
-            raise ValidationError('The category does not exist for this user.')
+    def create_new_spent_for_recurring(self): 
+        if self.recurring is True: 
+            new_date = self.date + timedelta(days=self.period)
 
-        return super().save(*args, **kwargs)
-
+            if not SpentModel.objects.filter(Q(date=new_date, description=self.description, period=self.period)).exists() and new_date <= date.today():  
+                        SpentModel.objects.create(
+                            description = self.description, 
+                            value = self.value, 
+                            date = new_date, 
+                            recurring = True, 
+                            period = self.period, 
+                            user=self.user, 
+                            category=self.category, 
+                        )
 
     def __str__(self) -> str:
         return f'{self.date} - {self.value}'
-    
-class RecurringSpentModel(models.Model): 
-    period = models.IntegerField(validators=[validate_positive_values])
-    last_billing_date = models.DateField(default=date.today, blank=True)
-    spent = models.ForeignKey(SpentModel, on_delete=models.CASCADE, related_name='spent')
-
-    @property
-    def next_billing_date(self):
-        return self.last_billing_date + timedelta(days=self.period)
-
-    def update_last_billing_date(self): 
-        if date.today() >= self.next_billing_date: 
-            self.last_billing_date = self.next_billing_date 
-
-            self.save()
-
-    class Meta: 
-        verbose_name = 'Recurring Spent'
-        verbose_name_plural = 'Recurring Spent'
-        ordering = ['-last_billing_date']
-
-#recurring_spents = RecurringSpentModel.objects.filter(spent__member=member)

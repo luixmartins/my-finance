@@ -7,22 +7,18 @@ from rest_framework.authtoken.models import Token
 from rest_framework import status 
 from rest_framework.permissions import IsAuthenticated
 
-from user.serializers import AuthenticateSerializer, RegisterUserSerializer
+from user.serializers import AuthenticateSerializer, UserSerializer
 
 class LoginView(APIView): 
     def post(self, request): 
-        serializer = AuthenticateSerializer(data=request.POST)
+        serializer = AuthenticateSerializer(data=request.data)
 
         if serializer.is_valid(): 
             user = serializer.validated_data['user']
             
             token, created = Token.objects.get_or_create(user=user)
-            
-            response = {
-                'token': token.key
-            }
 
-            return Response(response, status=status.HTTP_202_ACCEPTED)
+            return Response({'token': token.key}, status=status.HTTP_202_ACCEPTED)
         
         return Response({'Authorization': 'Invalid credentials'}, status=status.HTTP_404_NOT_FOUND)
     
@@ -35,7 +31,7 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_200_OK)
     
 class RegisterView(generics.CreateAPIView): 
-    serializer_class = RegisterUserSerializer 
+    serializer_class = UserSerializer 
 
     def create(self, request): 
         serializer = self.get_serializer(data=request.data)
