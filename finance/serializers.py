@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User 
 from django.db import IntegrityError 
+from django.db.models import Q 
 
 from rest_framework import serializers 
 
@@ -46,31 +47,53 @@ class SpentSerializer(serializers.ModelSerializer):
         spent = SpentModel.objects.create(category=category, user=user, **validated_data)
 
         return spent 
-
-# class SpentSerializer(serializers.ModelSerializer): 
-#     category  = serializers.CharField(source='category.name')
-#     value = serializers.DecimalField(decimal_places=2, max_digits=10)
-
-#     class Meta: 
-#         model = SpentModel 
-#         read_only_fields = ['id']
-#         exclude = ['member']
-
-#     def create(self, validated_data): 
-#         validated_data['member'] = self.context['user']
-#         category = validated_data['category']['name']
-
-        
-#         try: 
-#             validated_data['category'] = CategoryModel.objects.get(name=category)
-            
-#             MemberCategoryModel.objects.get_or_create(member=validated_data['member'], category=validated_data['category'])
-
-#         except CategoryModel.DoesNotExist: 
-#             raise serializers.ValidationError(f'The category does not exists.')
-         
-#         return SpentModel.objects.create(**validated_data)
     
+    def update(self, instance, validated_data): 
+        user = self.context['user']
+        
+        recurring = validated_data.get('recurring', instance.recurring)
+
+        if recurring is False and recurring != instance.recurring:
+            spents_recurring = SpentModel.objects.filter(
+                Q(
+                    user = user, 
+                    value = instance.value, 
+                    description = instance.description, 
+                    period = instance.period, 
+                    recurring = True
+                )
+            ) 
+
+            for spent in spents_recurring: 
+                spent.recurring = False
+                spent.period = None
+                
+                spent.save()
+            
+            instance.recurring = False 
+        else:
+            instance.recurring = True  
+
+
+        instance.value = validated_data.get('value', instance.value)
+        instance.description = validated_data.get('description', instance.description)
+        instance.date = validated_data.get('date', instance.date)
+        instance.period = validated_data.get('period', instance.period)
+        
+        category_data = validated_data.get('category', instance.category)
+
+        if not isinstance(category_data, CategoryModel) and category_data != None: 
+            name = category_data.get('name')
+            try: 
+                category_instance = CategoryModel.objects.get(user=user, name=name)
+            except: 
+                category_instance = CategoryModel.objects.create(user=user, name=name)
+            
+            instance.category = category_instance
+
+        instance.save()
+
+        return instance 
 #     def update(self, instance, validated_data):
 #         user = self.context['user']
 

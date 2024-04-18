@@ -1,3 +1,11 @@
-django
-djangorestframework
-python-decouple
+asgiref==3.8.1
+Django==5.0.3
+django-filter==24.2
+djangorestframework==3.15.1
+gunicorn==22.0.0
+mysqlclient==2.2.4
+packaging==24.0
+python-decouple==3.8
+six==1.16.0
+sqlparse==0.4.4
+typing_extensions==4.10.0

@@ -1,9 +1,21 @@
 services:
+  web: 
+    build: .
+    container_name: myfinanceapi
+    command: >
+      sh -c "dockerize -wait tcp://db:3306 -timeout 30s &&
+      python manage.py migrate &&
+      gunicorn api.wsgi:application --bind 0.0.0.0:8000"
+
+    ports: 
+      - "8000:8000"
+    depends_on: 
+      - db 
+  
   db:
     image: mysql:latest
-    
-    container_name: mysql_container
-    
+
+    container_name: myfinancedb
     ports:
       - "3306:3306"
     
@@ -15,10 +27,6 @@ services:
     
     volumes:
       - mysql_data:/var/lib/mysql
-    
-    command: ['--default-authentication-plugin=mysql_native_password']
-    
-    restart: unless-stopped
 
 volumes:
   mysql_data:

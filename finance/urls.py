@@ -1,6 +1,6 @@
 from django.urls import path 
 
-from finance.views import CategoryListCreateView, CategoryDetailView, SpentListCreateView
+from finance.views import CategoryListCreateView, CategoryDetailView, SpentListCreateView, SpentDetailView
 
 urlpatterns = [
     #categories 
@@ -8,8 +8,8 @@ urlpatterns = [
     path('categories/<int:pk>/', CategoryDetailView.as_view(), name='detail-category'), 
 
     # #spents 
-    path('spents/', SpentListCreateView.as_view(), name='list-create-spent'), 
-    # path('spents/<int:pk>/', SpentDetailView.as_view(), name='detail-spent'), 
+    path('spends/', SpentListCreateView.as_view(), name='list-create-spent'), 
+    path('spends/<int:pk>/', SpentDetailView.as_view(), name='detail-spent'), 
     
     # #recurring_spents
     # path('spents/recurring/', RecurringSpentListCreateView.as_view(), name='create-list-recurring'), 

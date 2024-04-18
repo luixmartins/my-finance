@@ -66,38 +66,27 @@ class SpentListCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
                                                                                                                                                               
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     
-# class SpentListCreateView(APIView): 
-#     permission_classes = [IsAuthenticated]
-#     filterset_class = SpentModelFilter
+class SpentDetailView(generics.RetrieveUpdateDestroyAPIView): 
+    permission_classes = [IsAuthenticated]
+    serializer_class = SpentSerializer 
 
-#     def get(self, request): 
-#         recurring_spents = RecurringSpentModel.objects.filter(spent__member=request.user)
-#         for spent in recurring_spents: 
-#             spent.update_last_billing_date
-
-#             spent.save()
-
-#             print(type(spent))
-#         spents = SpentModel.objects.filter(member=request.user)
-
-#         filter_backend = DjangoFilterBackend()
-#         filtered_spents = filter_backend.filter_queryset(request, spents, self)
-
-#         serializer = SpentSerializer(filtered_spents, many=True)
-
-#         return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        return SpentModel.objects.filter(user=self.request.user)
     
-#     def post(self, request): 
-#         serializer = SpentSerializer(data=request.data, context={'user': request.user})
+    def update(self, request, *args, **kwargs): 
+        instance = self.get_object()
 
-#         if serializer.is_valid(): 
-#             serializer.save()
+        # print(request.data)
+        # return Response({'up': True})
+        serializer = SpentSerializer(instance, data=request.data, partial=True, context={'user': request.user})
 
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if serializer.is_valid(): 
+            serializer.save()
 
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 # class SpentDetailView(generics.RetrieveUpdateDestroyAPIView): 
 #     permission_classes = [IsAuthenticated]
@@ -114,48 +103,4 @@ class SpentListCreateView(APIView):
 #             serializer.save() 
 
 #             return Response(serializer.data)
-#         return Response(serializer.errors)
-    
-# class RecurringSpentListCreateView(APIView): 
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request): 
-#         spents = RecurringSpentModel.objects.filter(spent__member=request.user)
-#         serializer = RecurringSpentSerializer(spents, many=True)
-
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     def post(self, request): 
-#         context = { 
-#             'user': request.user, 
-#             'data': request.data['spent']
-#         }
-
-#         serializer = RecurringSpentSerializer(data=request.data, context=context)
-
-#         if serializer.is_valid(): 
-#             serializer.save()
-
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# class RecurringSpentDetailView(generics.RetrieveUpdateDestroyAPIView): 
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = RecurringSpentSerializer
-
-#     def get_queryset(self): 
-#         return RecurringSpentModel.objects.filter(spent__member=self.request.user)
-    
-#     def update(self, request, *args, **kwargs): 
-#         instance = self.get_object()
-
-#         serializer = RecurringSpentSerializer(instance, data=request.data, partial=True, context={'user': request.user})
-
-#         if serializer.is_valid(): 
-#             test = serializer.save() 
-#             print(test)
-
-#             return Response(serializer.data)
-        
 #         return Response(serializer.errors)
